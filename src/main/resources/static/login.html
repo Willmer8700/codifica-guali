@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Codifica con Guali</title>
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <h1>Codifica con Guali</h1>
+            <h2>Administración</h2>
+            
+            <form action="/api/auth/login" method="POST" class="login-form">
+                <div class="form-group">
+                    <label for="username">Usuario</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Contraseña</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
+                
+                <div class="error-message" id="errorMessage"></div>
+            </form>
+            
+            <a href="/" class="back-link">← Volver al Juego</a>
+        </div>
+    </div>
+    
+    <script>
+        // Check for error parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('error')) {
+            document.getElementById('errorMessage').textContent = 'Usuario o contraseña incorrectos';
+        }
+    </script>
+</body>
+</html>

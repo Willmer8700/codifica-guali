@@ -6,12 +6,12 @@ services:
     container_name: codifica-guali-db
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: codifica_guali
-      MYSQL_USER: guali_user
-      MYSQL_PASSWORD: guali_password
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
     networks:
@@ -29,13 +29,13 @@ services:
     container_name: codifica-guali-app
     restart: always
     ports:
-      - "8080:8080"
+      - "8090:8080"
     environment:
       DB_HOST: mariadb
       DB_PORT: 3306
       DB_NAME: codifica_guali
-      DB_USER: guali_user
-      DB_PASSWORD: guali_password
+      DB_USER: root
+      DB_PASSWORD: root
     depends_on:
       mariadb:
         condition: service_healthy

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estadísticas - Codifica con Guali</title>
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>🤖 Panel de Administración</h1>
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <div class="admin-nav">
+                    <a href="/admin/dashboard.html">Pistas</a>
+                    <a href="/admin/users.html">Usuarios</a>
+                    <a href="/admin/stats.html">Estadísticas</a>
+                    <a href="/admin/audit.html">Auditoría</a>
+                </div>
+                <form action="/api/auth/logout" method="POST" style="margin: 0;">
+                    <button type="submit" class="logout-btn">Cerrar Sesión</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="admin-content">
+            <h2>Estadísticas de Uso</h2>
+            
+            <div class="filters">
+                <input type="date" id="startDate">
+                <input type="date" id="endDate">
+                <button onclick="loadStats()">Actualizar</button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total de Sesiones</h3>
+                    <div class="stat-value" id="totalSessions">0</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);">
+                    <h3>Misiones Completadas</h3>
+                    <div class="stat-value" id="completedSessions">0</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #ff4757 0%, #ff3838 100%);">
+                    <h3>Misiones Fallidas</h3>
+                    <div class="stat-value" id="failedSessions">0</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <h3>Tasa de Éxito</h3>
+                    <div class="stat-value" id="successRate">0%</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px; padding: 20px; background: #f9f9f9; border-radius: 8px;">
+                <h3>Información</h3>
+                <p>Estas estadísticas muestran el uso de la aplicación en el rango de fechas seleccionado.</p>
+                <p><strong>Total de Sesiones:</strong> Número total de intentos de completar misiones.</p>
+                <p><strong>Misiones Completadas:</strong> Intentos exitosos donde el robot completó el camino.</p>
+                <p><strong>Misiones Fallidas:</strong> Intentos donde el robot se salió del camino.</p>
+                <p><strong>Tasa de Éxito:</strong> Porcentaje de misiones completadas vs total de intentos.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set default dates (last 30 days)
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 30);
+        
+        document.getElementById('startDate').valueAsDate = startDate;
+        document.getElementById('endDate').valueAsDate = endDate;
+        
+        // Load stats on page load
+        loadStats();
+        
+        async function loadStats() {
+            const start = document.getElementById('startDate').value + 'T00:00:00';
+            const end = document.getElementById('endDate').value + 'T23:59:59';
+            
+            try {
+                const response = await fetch(`/api/stats?start=${start}&end=${end}`);
+                const stats = await response.json();
+                
+                document.getElementById('totalSessions').textContent = stats.totalSessions || 0;
+                document.getElementById('completedSessions').textContent = stats.completedSessions || 0;
+                document.getElementById('failedSessions').textContent = stats.failedSessions || 0;
+                document.getElementById('successRate').textContent = 
+                    (stats.successRate || 0).toFixed(1) + '%';
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                alert('Error al cargar estadísticas');
+            }
+        }
+    </script>
+</body>
+</html>
