@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoría - Codifica con Guali</title>
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>🤖 Panel de Administración</h1>
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <div class="admin-nav">
+                    <a href="/admin/dashboard.html">Pistas</a>
+                    <a href="/admin/users.html">Usuarios</a>
+                    <a href="/admin/stats.html">Estadísticas</a>
+                    <a href="/admin/audit.html">Auditoría</a>
+                </div>
+                <form action="/api/auth/logout" method="POST" style="margin: 0;">
+                    <button type="submit" class="logout-btn">Cerrar Sesión</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="admin-content">
+            <h2>Registro de Auditoría</h2>
+            <p style="color: #666; margin-bottom: 20px;">
+                Historial de acciones realizadas por los administradores del sistema.
+            </p>
+            
+            <table id="auditTable">
+                <thead>
+                    <tr>
+                        <th>Fecha y Hora</th>
+                        <th>Usuario</th>
+                        <th>Acción</th>
+                        <th>Detalles</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', loadAuditLogs);
+        
+        async function loadAuditLogs() {
+            try {
+                const response = await fetch('/api/audit');
+                const logs = await response.json();
+                
+                const tbody = document.querySelector('#auditTable tbody');
+                tbody.innerHTML = '';
+                
+                if (logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No hay registros de auditoría</td></tr>';
+                    return;
+                }
+                
+                logs.forEach(log => {
+                    const tr = document.createElement('tr');
+                    const date = new Date(log.timestamp);
+                    const formattedDate = date.toLocaleString('es-GT');
+                    
+                    tr.innerHTML = `
+                        <td>${formattedDate}</td>
+                        <td><strong>${log.username}</strong></td>
+                        <td><span style="padding: 4px 8px; background: #667eea; color: white; border-radius: 4px; font-size: 0.9em;">${formatAction(log.action)}</span></td>
+                        <td>${log.details || '-'}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('Error loading audit logs:', error);
+                alert('Error al cargar los registros de auditoría');
+            }
+        }
+        
+        function formatAction(action) {
+            const actionMap = {
+                'CREATE_TRACK': '➕ Crear Pista',
+                'UPDATE_TRACK': '✏️ Editar Pista',
+                'DELETE_TRACK': '🗑️ Eliminar Pista',
+                'IMPORT_TRACK': '📥 Importar Pista',
+                'CREATE_USER': '➕ Crear Usuario',
+                'UPDATE_USER': '✏️ Editar Usuario',
+                'DELETE_USER': '🗑️ Eliminar Usuario',
+                'LOGIN': '🔐 Inicio de Sesión'
+            };
+            return actionMap[action] || action;
+        }
+    </script>
+</body>
+</html>

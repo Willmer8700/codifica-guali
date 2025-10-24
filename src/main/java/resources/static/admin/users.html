@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuarios - Codifica con Guali</title>
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>🤖 Panel de Administración</h1>
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <div class="admin-nav">
+                    <a href="/admin/dashboard.html">Pistas</a>
+                    <a href="/admin/users.html">Usuarios</a>
+                    <a href="/admin/stats.html">Estadísticas</a>
+                    <a href="/admin/audit.html">Auditoría</a>
+                </div>
+                <form action="/api/auth/logout" method="POST" style="margin: 0;">
+                    <button type="submit" class="logout-btn">Cerrar Sesión</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="admin-content">
+            <h2>Gestión de Usuarios Administradores</h2>
+            <button class="btn-add" onclick="showCreateModal()">➕ Nuevo Usuario</button>
+            
+            <table id="usersTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Usuario</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Último Acceso</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Create/Edit Modal -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Nuevo Usuario</h2>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            
+            <form id="userForm">
+                <input type="hidden" id="userId">
+                
+                <div class="form-group">
+                    <label for="username">Nombre de Usuario</label>
+                    <input type="text" id="username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Contraseña</label>
+                    <input type="password" id="password" minlength="6">
+                    <small id="passwordHelp">Dejar en blanco para mantener la contraseña actual (solo en edición)</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="isActive" checked> Usuario activo
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Guardar Usuario</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let editingUserId = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUsers();
+            document.getElementById('userForm').addEventListener('submit', saveUser);
+        });
+
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/users');
+                const users = await response.json();
+                
+                const tbody = document.querySelector('#usersTable tbody');
+                tbody.innerHTML = '';
+                
+                users.forEach(user => {
+                    const tr = document.createElement('tr');
+                    const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleString('es-GT') : 'Nunca';
+                    
+                    tr.innerHTML = `
+                        <td>${user.id}</td>
+                        <td><strong>${user.username}</strong></td>
+                        <td>${user.email}</td>
+                        <td>${user.role}</td>
+                        <td>${user.active ? '✅ Activo' : '❌ Inactivo'}</td>
+                        <td>${lastLogin}</td>
+                        <td>
+                            <button class="action-btn btn-edit" onclick="editUser(${user.id})">✏️ Editar</button>
+                            <button class="action-btn btn-delete" onclick="deleteUser(${user.id})">🗑️ Eliminar</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('Error loading users:', error);
+                alert('Error al cargar los usuarios');
+            }
+        }
+
+        function showCreateModal() {
+            editingUserId = null;
+            document.getElementById('modalTitle').textContent = 'Nuevo Usuario';
+            document.getElementById('userForm').reset();
+            document.getElementById('userId').value = '';
+            document.getElementById('password').required = true;
+            document.getElementById('passwordHelp').style.display = 'none';
+            document.getElementById('userModal').classList.add('active');
+        }
+
+        async function editUser(id) {
+            try {
+                const response = await fetch(`/api/users/${id}`);
+                const user = await response.json();
+                
+                editingUserId = id;
+                document.getElementById('modalTitle').textContent = 'Editar Usuario';
+                document.getElementById('userId').value = user.id;
+                document.getElementById('username').value = user.username;
+                document.getElementById('username').disabled = true;
+                document.getElementById('email').value = user.email;
+                document.getElementById('password').value = '';
+                document.getElementById('password').required = false;
+                document.getElementById('isActive').checked = user.active;
+                document.getElementById('passwordHelp').style.display = 'block';
+                
+                document.getElementById('userModal').classList.add('active');
+            } catch (error) {
+                console.error('Error loading user:', error);
+                alert('Error al cargar el usuario');
+            }
+        }
+
+        async function saveUser(e) {
+            e.preventDefault();
+            
+            const userData = {
+                username: document.getElementById('username').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+                active: document.getElementById('isActive').checked
+            };
+            
+            try {
+                let response;
+                if (editingUserId) {
+                    response = await fetch(`/api/users/${editingUserId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(userData)
+                    });
+                } else {
+                    response = await fetch('/api/users', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(userData)
+                    });
+                }
+                
+                if (response.ok) {
+                    alert('Usuario guardado exitosamente');
+                    closeModal();
+                    loadUsers();
+                } else {
+                    const error = await response.text();
+                    alert('Error al guardar el usuario: ' + error);
+                }
+            } catch (error) {
+                console.error('Error saving user:', error);
+                alert('Error al guardar el usuario');
+            }
+        }
+
+        async function deleteUser(id) {
+            if (!confirm('¿Estás seguro de eliminar este usuario?')) return;
+            
+            try {
+                const response = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    alert('Usuario eliminado exitosamente');
+                    loadUsers();
+                } else {
+                    alert('Error al eliminar el usuario');
+                }
+            } catch (error) {
+                console.error('Error deleting user:', error);
+                alert('Error al eliminar el usuario');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('userModal').classList.remove('active');
+            document.getElementById('username').disabled = false;
+        }
+    </script>
+</body>
+</html>
